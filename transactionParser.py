@@ -1,4 +1,4 @@
-from objects import DBObject, ObjectType
+from objects import DB, ObjectType
 from operation import Command, Operation
 
 
@@ -31,7 +31,7 @@ def parse_objects(database, object_strings):
             current_object = found_object
         else:
             # Se o objeto não existe, cria um novo objeto com o nome, sem prefixo
-            new_object = DBObject(current_object, obj_name, current_type)
+            new_object = DB(current_object, obj_name, current_type)
             current_object = new_object
 
 

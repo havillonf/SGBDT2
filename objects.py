@@ -11,7 +11,7 @@ class ObjectType(Enum):
     ROW = "ROW"
 
 
-class DBObject:
+class DB:
     def __init__(self, parent=None, name="", obj_type=None):
         self.parent = parent
         self.name = name

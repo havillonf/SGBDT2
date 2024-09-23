@@ -1,9 +1,9 @@
 import transactionParser as tp
-from objects import DBObject, ObjectType
+from objects import DB, ObjectType
 from operation import Command, Lock, Operation
 
 # Cria a estrutura do banco de dados como um objeto de tipo DATABASE
-db = DBObject(None, "DB", ObjectType.DATABASE)
+db = DB(None, "DB", ObjectType.DATABASE)
 
 # Recebe a string do escalonamento (schedule) como entrada do usuário
 scheduler_string = input("Insira a string do schedule: \n")
@@ -25,10 +25,10 @@ def verify_lock(command, operations):
 
 # Verifica se um objeto específico tem um bloqueio que impede a operação
 def verify_lock_for_object(db_object, operations, transaction_id):
-    # Garante que db_object seja do tipo DBObject
-    if isinstance(db_object, DBObject):
+    # Garante que db_object seja do tipo DB
+    if isinstance(db_object, DB):
         return db_object.check_lock(operations, transaction_id)
-    return None  # Retorna None se o objeto não for um DBObject
+    return None  # Retorna None se o objeto não for um DB
 
 
 # Verifica se o objeto tem bloqueios de transações específicas
@@ -105,9 +105,9 @@ def try_schedule_command(command):
         current_object = verify_lock_for_transaction(
             [Operation.WRITE], [command.transaction_id]
         )
-        while current_object is not None and isinstance(current_object, DBObject):
+        while current_object is not None and isinstance(current_object, DB):
             lock = verify_lock_for_object(
-                current_object,  # Garante que este objeto seja um DBObject
+                current_object,  # Garante que este objeto seja um DB
                 [Operation.READ, Operation.WRITE, Operation.COMMIT],
                 command.transaction_id,
             )
@@ -155,6 +155,7 @@ def has_deadlock(scheduler, waiting, deadlock_graph, command):
         if find_way_to_deadlock(deadlock_graph, deadlock, command.transaction_id):
             has_deadlock = True
             print(f"Deadlock encontrado, abortando transação {command.transaction_id}")
+            remove_locks_from_print_list(command.transaction_id)
             # Remove todos os comandos pendentes da transação abortada
             waiting[:] = [
                 c for c in waiting if c.transaction_id != command.transaction_id
@@ -180,17 +181,21 @@ def add_command_to_waiting_list(command):
     print(f"Comando {repr(command)} adicionado à lista de espera")
     waiting.append(command)
 
+def remove_locks_from_print_list(transaction_id):
+    for schedule in final_schedule:
+        if(transaction_id in schedule):
+            final_schedule.remove(schedule)
+
 
 # Loop principal de execução do scheduler
 while scheduler:
+    print("Scheduler: ")
+    print(scheduler)
+    print()
     command = scheduler.pop(0)  # Remove o primeiro comando do scheduler
     if command.transaction_id not in transactions:
-        transactions.append(
-            command.transaction_id
-        )  # Adiciona a transação à lista de ativas
-        deadlock_graph[
-            command.transaction_id
-        ] = []  # Cria uma entrada no grafo de deadlocks
+        transactions.append(command.transaction_id)  # Adiciona a transação à lista de ativas
+        deadlock_graph[command.transaction_id] = []  # Cria uma entrada no grafo de deadlocks
 
     # Verifica se há comandos pendentes para a transação
     if has_waiting_commands(waiting, command):
@@ -205,10 +210,10 @@ while scheduler:
         transfer_waiting_to_scheduler()  # Após commit, transfere comandos da lista de espera
 
 
-print("\nSaída final:")
+# print("\nSaída final:")
 
-for i in range (0, len(final_schedule)):
-    if(i == len(final_schedule)-1):
-        print(final_schedule[i])
-    else:
-        print(final_schedule[i], end="-")
+# for i in range (0, len(final_schedule)):
+#     if(i == len(final_schedule)-1):
+#         print(final_schedule[i])
+#     else:
+#         print(final_schedule[i], end="-")

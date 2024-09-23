@@ -1,0 +1,49 @@
+ideias
+
+entrada p/ teste: R1(TS_A)-W2(TS_B)-C1-R2(TS_A)-W1(TS_B)-C2
+
+CLASSES
+- DB
+    - DATABASE
+    - TABLESPACE
+    - TABLE
+    - PAGE
+    - ROW
+- Operation
+    - READ
+    - WRITE
+    - COMMIT
+Command
+Lock
+
+EXECUÇÃO DO PROGRAMA
+
+- recebe o schedule do usuário no formato: R1(T_A) - Read na Tabela A - Transaction 1
+- faz o parse da string no objeto scheduler
+    - operações são separadas por "-"
+    - nomes de objetos definidos entre parenteses
+    - commit não possui objeto, apenas transação
+    - faz o parse do objeto (verificar objetos repetidos)
+    - faz o parse dos comandos (R, W ou C) para cada objeto
+    - retorna a lista de comandos
+
+- inicializa as listas do scheduler, waiting, transactions e deadlock_graph
+
+- loop pelo escalonador
+    - verificar se o comando não foi registrado em transactions
+    - comandos não registrados são adicionados em transactions e no deadlock_graph
+    - caso haja comandos em espera, adicionar na waiting list
+    - caso não, tenta escalonar o comando
+        - realiza a verificação de bloqueios, caso write ou read
+        - se houverem bloqueios, adiciona no grafo
+            - função check_lock da classe DB
+            - para cada bloqueio, verifica se está nas operações permitidas e se a transação não é a atual
+        - caso não houver bloqueio, cria utilizando o método add_lock
+        - no caso de commits, verificar os bloqueios que possam estar pendentes
+        - faz a varredura dos objetos e caso haja algum pendenciado, adiciona no grafo de deadlock
+        - se tudo der certo, executa o commit
+    - ao encontrar deadlocks, procura pela transação que causou (busca em profundidade procurando arestas de retorno)
+    - aborta a transação que está causando o deadlock, tanto no vetor waiting quanto no scheduler
+    - remove os bloqueios daquela transação
+    - transferir os elementos que estavam em waiting para o scheduler
+    - no caso de ter realizado um escalonamento bem sucedido, e tiver um comando do tipo commit, também transferir os comandos em waiting para o scheduler
